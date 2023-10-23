@@ -6,7 +6,7 @@
  */
 #include "gameUtility.h"
 #include "stdio.h"
-
+#include "map.h"
 #include "ILI9341_Touchscreen.h"
 #include "ILI9341_STM32_Driver.h"
 #include "ILI9341_GFX.h"
@@ -24,6 +24,7 @@ extern char str[90];
 extern int playerCount;
 extern Player* players ;
 extern int TimeTotal;
+extern int clock;
 //Vector Start
 printVector(Vector2 v){
 	char str[40];
@@ -323,31 +324,26 @@ void drawCell(Vector2 index){
 			DrawImage(cell->objTrans,&potionImage);
 			break;
 		case SpeedItem:
-			DrawImage(cell->objTrans,&bootImage);
+			DrawImage(cell->objTrans,&shoeImage);
 			break;
 	}
 }
-void setMap(){
-	int template[MAP_HEIGHT][MAP_WIDTH] ={
-			{0,0,2,2,2,2,2,2,2,2,2,0,0},
-			{0,1,0,1,0,1,0,1,0,1,0,1,0},
-			{2,2,2,2,2,2,2,2,2,2,2,2,2},
-			{2,1,0,1,0,1,0,1,0,1,0,1,2},
-			{2,2,2,2,2,2,2,2,2,2,2,2,2},
-			{2,1,0,1,0,1,0,1,0,1,0,1,2},
-			{2,2,2,2,2,2,2,2,2,2,2,2,2},
-			{2,1,0,1,0,1,0,1,0,1,0,1,2},
-			{2,2,2,2,2,2,2,2,2,2,2,2,2},
-			{2,1,0,1,0,1,0,1,0,1,0,1,2},
-			{2,2,2,2,2,2,2,2,2,2,2,2,2},
-			{0,1,0,1,0,1,0,1,0,1,0,1,0},
-			{0,0,2,2,2,2,2,2,2,2,2,0,0},
-	};
-	for(int i = 0;i<mapSize.y;i++){
-		for(int j=0;j<mapSize.x;j++){
+void setMap(int num){
+	int *mapArr;
+	if(num==1){
+		mapArr = map1;
+	}
+	else if(num == 2){
+		mapArr = map2;
+	}
+	else if(num == 3){
+		mapArr = map3;
+	}
+	for(int i = 0;i<MAP_HEIGHT;i++){
+		for(int j=0;j<MAP_WIDTH;j++){
 			Vector2 index = Vector2_init(j,i);
-			if(template[i][j]){
-				setObject(index,(ObjectType)template[i][j],NULL);
+			if(mapArr[i*MAP_WIDTH+j]){
+				setObject(index,(ObjectType)mapArr[i*MAP_WIDTH+j],NULL);
 			}
 			else{
 				drawCell(index);
@@ -805,7 +801,7 @@ void DrawPlayerUI(PlayerUI* playerUI){
 	DrawImage(&playerUI->charactorTrans,playerUI->player->imgPtr1);
 
 	Vector2 pos =playerUI->startTextPos;
-	DrawImage(&playerUI->speedImgTrans,bootImage);
+	DrawImage(&playerUI->speedImgTrans,shoeImage);
 	sprintf(str,"%d",playerUI->player->speed);
 	ILI9341_Draw_Text(str,pos.x,pos.y, WHITE, 2, BLACK);
 

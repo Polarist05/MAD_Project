@@ -1,4 +1,5 @@
-Core/Src/Icon.o: ../Core/Src/Icon.c ../Core/Src/icon.h ../Core/Inc/main.h \
+Core/Src/map.o: ../Core/Src/map.c ../Core/Src/map.h \
+ ../Core/Src/gameUtility.h ../Core/Inc/main.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
@@ -33,8 +34,10 @@ Core/Src/Icon.o: ../Core/Src/Icon.c ../Core/Src/icon.h ../Core/Inc/main.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
-../Core/Src/icon.h:
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
+ ../Core/Src/utility.h ../Core/Src/icons.h ../Core/Src/lcd.h
+../Core/Src/map.h:
+../Core/Src/gameUtility.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
@@ -71,3 +74,6 @@ Core/Src/Icon.o: ../Core/Src/Icon.c ../Core/Src/icon.h ../Core/Inc/main.h \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
+../Core/Src/utility.h:
+../Core/Src/icons.h:
+../Core/Src/lcd.h:

@@ -10,15 +10,15 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "utility.h"
-#include "Icon.h"
+#include "icons.h"
 #define MAP_WIDTH 13
 #define MAP_HEIGHT 13
 #define CELL_SIZE 16
 #define ITEM_SIZE 18
 #define OFFSET_X 104
 #define OFFSET_Y 30
-#define PLAYER_WIDTH 5
-#define PLAYER_HEIGHT 5
+#define PLAYER_WIDTH 10
+#define PLAYER_HEIGHT 10
 #define BOMB_DELAY 3000
 #define DETONATE_DURATION 1000
 #define IMMORTAL_DURATION 3000
@@ -103,7 +103,7 @@ typedef struct MapCellStruct{
 MapCell* getCell(Vector2 index);
 void drawCell(Vector2 index);
 void setObject(Vector2 index,ObjectType type,Player* player);
-void setMap();
+void setMap(int num);
 placeBomb(Player* player);
 typedef struct BombStruct{
 	Vector2 index;

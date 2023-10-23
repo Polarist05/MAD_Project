@@ -38,6 +38,7 @@
 #include "ILI9341_GFX.h"
 
 #include "snow_tiger.h"
+#include "icons.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,6 +71,626 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#define GAME_TIME 300
+bool endGameFlag=true;
+char str[90];
+uint8_t isTouchWithinRectangle(Rectangle rectangle, Point point) {
+	return (point.x >= rectangle.x0 && point.x <= rectangle.x1
+			&& point.y <= rectangle.y1 && point.y >= rectangle.y0);
+}
+void startGame();
+void checkMap(Point cursor, int mapState[], Rectangle mapRectangle[]) {
+	for (int i = 0; i < 3; i++) {
+		if (isTouchWithinRectangle(mapRectangle[i], cursor)) {
+			mapState[i] = 1;
+			for (int j = 0; j < 3; j++) {
+				if (j == i)
+					continue;
+				mapState[j] = 0;
+			}
+		}
+		if (mapState[i]) {
+			ILI9341_Draw_Filled_Rectangle_Coord((mapRectangle[i]).x0,
+					(mapRectangle[i]).y0, (mapRectangle[i]).x1,
+					(mapRectangle[i]).y1, 0x02e0);
+			switch (i) {
+			case 0:
+				ILI9341_Draw_Text("Map 1", 48, 180, WHITE, 1, 0x02e0);
+				break;
+			case 1:
+				ILI9341_Draw_Text("Map 2", 118, 180, WHITE, 1, 0x02e0);
+				break;
+			case 2:
+				ILI9341_Draw_Text("Map 3", 188, 180, WHITE, 1, 0x02e0);
+				break;
+			}
+		} else {
+			ILI9341_Draw_Filled_Rectangle_Coord((mapRectangle[i]).x0,
+					(mapRectangle[i]).y0, (mapRectangle[i]).x1,
+					(mapRectangle[i]).y1,
+					GREEN);
+			ILI9341_Draw_Hollow_Rectangle_Coord((mapRectangle[i]).x0,
+					(mapRectangle[i]).y0, (mapRectangle[i]).x1,
+					(mapRectangle[i]).y1, 0x02e0);
+			switch (i) {
+			case 0:
+				ILI9341_Draw_Text("Map 1", 48, 180, 0x02e0, 1,
+				GREEN);
+				break;
+			case 1:
+				ILI9341_Draw_Text("Map 2", 118, 180, 0x02e0, 1,
+				GREEN);
+				break;
+			case 2:
+				ILI9341_Draw_Text("Map 3", 188, 180, 0x02e0, 1,
+				GREEN);
+				break;
+			}
+		}
+	}
+}
+
+int checkStartGame(int numPlayerState[], int mapState[], int characterState[],
+		int characterState_2[], int displayScreen) {
+	int checkPlay = 0;
+	for (int i = 0; i < 2; i++) {
+		if (numPlayerState[i] == 1) {
+			checkPlay++;
+			break;
+		}
+	}
+	for (int i = 0; i < 3; i++) {
+		if (mapState[i] == 1) {
+			checkPlay++;
+			break;
+		}
+	}
+
+	for (int i = 0; i < 5; i++) {
+		if (characterState[i] == 1) {
+			checkPlay++;
+			break;
+		}
+	}
+	if (numPlayerState[1]) {
+		for (int i = 0; i < 5; i++) {
+			if (characterState_2[i] == 1) {
+				checkPlay++;
+				break;
+			}
+		}
+	}
+
+	if (numPlayerState[0] && checkPlay == 3) {
+		displayScreen = 2;
+		return 1;
+	} else if (numPlayerState[1] && checkPlay == 4) {
+		displayScreen = 2;
+		return 1;
+	} else {
+		checkPlay = 0;
+		return 0;
+	}
+}
+
+void setting_winPage() {
+	int numPlayerState[2] = { 0, 0 };
+	int characterState[5] = { 0, 0, 0, 0, 0 };
+	int characterState_2[5] = { 0, 0, 0, 0, 0 };
+	int mapState[3] = { 0, 0, 0 };
+	int displayScreen = 0;
+	int mapID = 0;
+	int stateWin = 3;
+
+	Rectangle numPlayerRectangle[2] = { };
+	Rectangle charRectangle[5] = { };
+	Rectangle charHighlightRectangle[5] = { };
+	Rectangle mapRectangle[3] = { };
+
+	uint16_t xPos = 0;
+	uint16_t yPos = 0;
+//setting container
+	Rectangle c1 = { 10, 50, 250, 90 }; //size: 40x240
+	Rectangle c2 = { 10, 100, 250, 155 }; //size: 55x240
+	Rectangle c3 = { 10, 160, 250, 205 }; //size: 40x240
+//setting Button
+	Rectangle bPlayer_1 = { 45, 65, 125, 85 }; //size: 80x20
+	Rectangle bPlayer_2 = { 135, 65, 215, 85 }; //size: 80x20
+//setting character
+	Rectangle ch1 = { 30, 115, 62, 147 }; //size: 32x32
+	Rectangle ch2 = { 72, 115, 104, 147 }; //size: 32x32
+	Rectangle ch3 = { 114, 115, 146, 147 }; //size: 32x32
+	Rectangle ch4 = { 156, 115, 188, 147 }; //size: 32x32
+	Rectangle ch5 = { 198, 115, 230, 147 }; //size: 32x32
+//setting hilight when choosen
+	Rectangle hil_ch1 = { 28, 113, 64, 149 }; //size: 36x36
+	Rectangle hil_ch2 = { 70, 113, 106, 149 }; //size: 36x36
+	Rectangle hil_ch3 = { 112, 113, 148, 149 }; //size: 36x36
+	Rectangle hil_ch4 = { 154, 113, 190, 149 }; //size: 36x36
+	Rectangle hil_ch5 = { 196, 113, 232, 149 }; //size: 36x36
+//setting Button
+	Rectangle bMap_1 = { 30, 175, 90, 195 }; //size: 60x20
+	Rectangle bMap_2 = { 100, 175, 160, 195 }; //size: 60x20
+	Rectangle bMap_3 = { 170, 175, 230, 195 }; //size: 60x20
+
+	Rectangle bPlay = { 90, 210, 170, 230 }; //size: 80x20
+	Rectangle bNext = { 230, 210, 250, 230 }; //size: 20x20
+	Rectangle bBack = { 10, 210, 30, 230 }; //size: 20x20
+
+	const uint8_t SCREEN_ROTATION = SCREEN_HORIZONTAL_1;
+	ILI9341_Set_Rotation(SCREEN_ROTATION);
+	Image characterYellowList[5] = { playerIcon1Yellow_32, playerIcon2Yellow_32,
+			playerIcon3Yellow_32, playerIcon4Yellow_32, playerIcon5Yellow_32 };
+	Image characterOrangeList[5] = { playerIcon1Orange_32, playerIcon2Orange_32,
+			playerIcon3Orange_32, playerIcon4Orange_32, playerIcon5Orange_32 };
+	Image character112List[5] = { playerIcon1_112, playerIcon2_112,
+			playerIcon3_112, playerIcon4_112, playerIcon5_112 };
+	Image character56List[5] = { playerIcon1_56, playerIcon2_56,
+				playerIcon3_56, playerIcon4_56, playerIcon5_56 };
+
+	Point cursor;
+	Point drawPos;
+	while (1) {
+
+		/* USER CODE END WHILE */
+
+		/* USER CODE BEGIN 3 */
+		sprintf(str,"value :%d endFlag:%b\n",displayScreen,endGameFlag);
+		printOut(str);
+		if (displayScreen == 0) {
+			drawPos.x = 0;
+			drawPos.y = 0;
+			settingPage_1.drawPoint = drawPos;
+			drawImageAtPoint(settingPage_1, SCREEN_ROTATION);
+			ILI9341_Draw_Text("Bomber Man", 10, 10, BLACK, 4, WHITE);
+			drawPos.x = 157;
+			drawPos.y = 20;
+			bombIcon_16.drawPoint = drawPos;
+			drawImageAtPoint(bombIcon_16, SCREEN_ROTATION);
+			//draw container
+			ILI9341_Draw_Filled_Rectangle_Coord(c1.x0, c1.y0, c1.x1, c1.y1,
+			CYAN);
+			ILI9341_Draw_Filled_Rectangle_Coord(c2.x0, c2.y0, c2.x1, c2.y1,
+			YELLOW);
+			ILI9341_Draw_Filled_Rectangle_Coord(c3.x0, c3.y0, c3.x1, c3.y1,
+			GREEN);
+			//draw header text
+			ILI9341_Draw_Text("Choose Number Of Players", 60, 53, BLACK, 1,
+			CYAN);
+			ILI9341_Draw_Text("Choose Character", 80, 103, BLACK, 1, YELLOW);
+			ILI9341_Draw_Text("Choose Map", 100, 163, BLACK, 1, GREEN);
+
+			ILI9341_Draw_Text("1 Player", 62, 70, 0x843f, 1, CYAN);
+			ILI9341_Draw_Text("2 Player", 152, 70, 0x843f, 1, CYAN);
+			numPlayerRectangle[0] = bPlayer_1;
+			numPlayerRectangle[1] = bPlayer_2;
+
+			charRectangle[0] = ch1;
+			charRectangle[1] = ch2;
+			charRectangle[2] = ch3;
+			charRectangle[3] = ch4;
+			charRectangle[4] = ch5;
+			//picture
+			for (int i = 0;
+					i
+							< sizeof(characterYellowList)
+									/ sizeof(characterYellowList[0]); i++) {
+				drawPos.x = charRectangle[i].x0;
+				drawPos.y = charRectangle[i].y0;
+				characterYellowList[i].drawPoint = drawPos;
+				drawImageAtPoint(characterYellowList[i], SCREEN_ROTATION);
+			}
+
+			ILI9341_Draw_Filled_Rectangle_Coord(bPlay.x0, bPlay.y0, bPlay.x1,
+					bPlay.y1, PINK);
+			ILI9341_Draw_Text("PLAY", 108, 211, WHITE, 2, PINK);
+			charHighlightRectangle[0] = hil_ch1;
+			charHighlightRectangle[1] = hil_ch2;
+			charHighlightRectangle[2] = hil_ch3;
+			charHighlightRectangle[3] = hil_ch4;
+			charHighlightRectangle[4] = hil_ch5;
+
+			mapRectangle[0] = bMap_1;
+			mapRectangle[1] = bMap_2;
+			mapRectangle[2] = bMap_3;
+			int player2_character;
+			//play & next button
+			//		Rectangle bPlay = { 90, 210, 170, 230 }; //size: 80x20
+			while (1) {
+				if (TP_Touchpad_Pressed()) {
+					uint16_t position_array[2];
+
+					if (TP_Read_Coordinates(position_array) == TOUCHPAD_DATA_OK) {
+						if (SCREEN_ROTATION == SCREEN_HORIZONTAL_1) {
+							xPos = position_array[1];
+							yPos = SCREEN_HEIGHT - position_array[0];
+						} else if (SCREEN_ROTATION == SCREEN_HORIZONTAL_2) {
+							xPos = SCREEN_WIDTH - position_array[1];
+							yPos = position_array[0];
+						}
+					}
+					cursor.x = xPos;
+					cursor.y = yPos;
+				}
+				for (int i = 0;
+						i < sizeof(numPlayerState) / sizeof(numPlayerState[0]);
+						i++) {
+					if (isTouchWithinRectangle(numPlayerRectangle[i], cursor)) {
+						numPlayerState[i] = 1;
+						numPlayerState[(i == 0) ? 1 : 0] = 0;
+					}
+					if (numPlayerState[i]) {
+						ILI9341_Draw_Filled_Rectangle_Coord(
+								(numPlayerRectangle[i]).x0,
+								(numPlayerRectangle[i]).y0,
+								(numPlayerRectangle[i]).x1,
+								(numPlayerRectangle[i]).y1, BLUE);
+						if (i == 0) {
+							ILI9341_Draw_Text("1 Player", 62, 70, WHITE, 1,
+							BLUE);
+							for (int i = 0;
+									i
+											< sizeof(characterState_2)
+													/ sizeof(characterState_2[0]);
+									i++) {
+								characterState_2[i] = 0;
+							}
+							ILI9341_Draw_Hollow_Rectangle_Coord(
+									(charHighlightRectangle[player2_character]).x0,
+									(charHighlightRectangle[player2_character]).y0,
+									(charHighlightRectangle[player2_character]).x1,
+									(charHighlightRectangle[player2_character]).y1,
+									YELLOW);
+							ILI9341_Draw_Filled_Rectangle_Coord(bNext.x0 - 2,
+									bNext.y0 - 2, bNext.x1 + 2, bNext.y1 + 2,
+									WHITE);
+						}
+
+						else {
+							ILI9341_Draw_Text("2 Player", 152, 70, WHITE, 1,
+							BLUE);
+						}
+
+					} else {
+						ILI9341_Draw_Filled_Rectangle_Coord(
+								(numPlayerRectangle[i]).x0,
+								(numPlayerRectangle[i]).y0,
+								(numPlayerRectangle[i]).x1,
+								(numPlayerRectangle[i]).y1, CYAN);
+						ILI9341_Draw_Hollow_Rectangle_Coord(
+								(numPlayerRectangle[i]).x0,
+								(numPlayerRectangle[i]).y0,
+								(numPlayerRectangle[i]).x1,
+								(numPlayerRectangle[i]).y1, BLUE);
+						if (i == 0)
+							ILI9341_Draw_Text("1 Player", 62, 70, BLUE, 1,
+							CYAN);
+						else
+							ILI9341_Draw_Text("2 Player", 150, 70, BLUE, 1,
+							CYAN);
+					}
+				}
+				for (int i = 0;
+						i
+								< sizeof(characterState_2)
+										/ sizeof(characterState_2[0]); i++) {
+					if (characterState_2[i]) {
+						ILI9341_Draw_Hollow_Rectangle_Coord(
+								(charHighlightRectangle[i]).x0,
+								(charHighlightRectangle[i]).y0,
+								(charHighlightRectangle[i]).x1,
+								(charHighlightRectangle[i]).y1, BLUE);
+						player2_character = i;
+						break;
+					}
+				}
+				for (int i = 0;
+						i < sizeof(characterState) / sizeof(characterState[0]);
+						i++) {
+					if (player2_character == i)
+						continue;
+					if (isTouchWithinRectangle(charHighlightRectangle[i],
+							cursor)) {
+						characterState[i] = 1;
+						for (int j = 0;
+								j
+										< sizeof(characterState)
+												/ sizeof(characterState[0]);
+								j++) {
+							if (j == i)
+								continue;
+							characterState[j] = 0;
+						}
+					}
+					if (characterState[i])
+						ILI9341_Draw_Hollow_Rectangle_Coord(
+								(charHighlightRectangle[i]).x0,
+								(charHighlightRectangle[i]).y0,
+								(charHighlightRectangle[i]).x1,
+								(charHighlightRectangle[i]).y1, RED);
+					else
+						ILI9341_Draw_Hollow_Rectangle_Coord(
+								(charHighlightRectangle[i]).x0,
+								(charHighlightRectangle[i]).y0,
+								(charHighlightRectangle[i]).x1,
+								(charHighlightRectangle[i]).y1, YELLOW);
+				}
+				checkMap(cursor, mapState, mapRectangle);
+				//				if (numPlayerState[0]) {
+				//					ILI9341_Draw_Filled_Rectangle_Coord(bPlay.x0, bPlay.y0,
+				//							bPlay.x1, bPlay.y1, PINK);
+				//					ILI9341_Draw_Text("PLAY", 108, 211, WHITE, 2, PINK);
+				//					if (isTouchWithinRectangle(bPlay, cursor)) {
+				//						if (checkStartGame())
+				//							break;
+				//					}
+				//				}
+				if (numPlayerState[1]) {
+					ILI9341_Draw_Filled_Rectangle_Coord(bNext.x0, bNext.y0,
+							bNext.x1, bNext.y1, PURPLE);
+					ILI9341_Draw_Text(">", 238, 211, WHITE, 2, PURPLE);
+					if (isTouchWithinRectangle(bNext, cursor)) {
+						displayScreen = 1;
+						break;
+					}
+				}
+				if (checkStartGame(numPlayerState, mapState, characterState,
+						characterState_2, displayScreen)) {
+					if (isTouchWithinRectangle(bPlay, cursor)){
+						break;
+					}
+				}
+
+				HAL_Delay(100);
+			}
+		}
+		if (displayScreen == 1) {
+			int player1_character;
+			drawPos.x = 250;
+			drawPos.y = 0;
+			settingPage_2.drawPoint = drawPos;
+			drawImageAtPoint(settingPage_2, SCREEN_ROTATION);
+			ILI9341_Draw_Filled_Rectangle_Coord(c2.x0, c2.y0, c2.x1, c2.y1,
+					0xFBE0);
+			ILI9341_Draw_Text("Choose Character Of Player 2", 50, 103, BLACK, 1,
+					0xFBE0);
+			//			ILI9341_Draw_Filled_Rectangle_Coord(ch1.x0, ch1.y0, ch1.x1, ch1.y1,
+			//			RED);
+			//			ILI9341_Draw_Filled_Rectangle_Coord(ch2.x0, ch2.y0, ch2.x1, ch2.y1,
+			//			RED);
+			//			ILI9341_Draw_Filled_Rectangle_Coord(ch3.x0, ch3.y0, ch3.x1, ch3.y1,
+			//			RED);
+			//			ILI9341_Draw_Filled_Rectangle_Coord(ch4.x0, ch4.y0, ch4.x1, ch4.y1,
+			//			RED);
+			//			ILI9341_Draw_Filled_Rectangle_Coord(ch5.x0, ch5.y0, ch5.x1, ch5.y1,
+			//			RED);
+			for (int i = 0;
+					i
+							< sizeof(characterOrangeList)
+									/ sizeof(characterOrangeList[0]); i++) {
+				drawPos.x = charRectangle[i].x0;
+				drawPos.y = charRectangle[i].y0;
+				characterOrangeList[i].drawPoint = drawPos;
+				drawImageAtPoint(characterOrangeList[i], SCREEN_ROTATION);
+			}
+			ILI9341_Draw_Filled_Rectangle_Coord(bNext.x0 - 2, bNext.y0 - 2,
+					bNext.x1 + 2, bNext.y1 + 2, WHITE);
+			//			ILI9341_Draw_Filled_Rectangle_Coord(bPlay.x0, bPlay.y0, bPlay.x1,
+			//					bPlay.y1, PINK);
+			//			ILI9341_Draw_Text("PLAY", 108, 211, WHITE, 2, PINK);
+			ILI9341_Draw_Filled_Rectangle_Coord(bBack.x0, bBack.y0, bBack.x1,
+					bBack.y1, PURPLE);
+			ILI9341_Draw_Text("<", 15, 211, WHITE, 2, PURPLE);
+			while (1) {
+				for (int i = 0;
+						i < sizeof(characterState) / sizeof(characterState[0]);
+						i++) {
+					if (characterState[i]) {
+						ILI9341_Draw_Hollow_Rectangle_Coord(
+								(charHighlightRectangle[i]).x0,
+								(charHighlightRectangle[i]).y0,
+								(charHighlightRectangle[i]).x1,
+								(charHighlightRectangle[i]).y1, RED);
+						player1_character = i;
+						break;
+					}
+				}
+				if (TP_Touchpad_Pressed()) {
+					uint16_t position_array[2];
+
+					if (TP_Read_Coordinates(position_array) == TOUCHPAD_DATA_OK) {
+						if (SCREEN_ROTATION == SCREEN_HORIZONTAL_1) {
+							xPos = position_array[1];
+							yPos = SCREEN_HEIGHT - position_array[0];
+						} else if (SCREEN_ROTATION == SCREEN_HORIZONTAL_2) {
+							xPos = SCREEN_WIDTH - position_array[1];
+							yPos = position_array[0];
+						}
+					}
+					cursor.x = xPos;
+					cursor.y = yPos;
+				}
+				for (int i = 0;
+						i
+								< sizeof(characterState_2)
+										/ sizeof(characterState_2[0]); i++) {
+					if (player1_character == i)
+						continue;
+					if (isTouchWithinRectangle(charHighlightRectangle[i],
+							cursor)) {
+						characterState_2[i] = 1;
+						for (int j = 0;
+								j
+										< sizeof(characterState_2)
+												/ sizeof(characterState_2[0]);
+								j++) {
+							if (j == i)
+								continue;
+							characterState_2[j] = 0;
+						}
+					}
+					if (characterState_2[i])
+						ILI9341_Draw_Hollow_Rectangle_Coord(
+								(charHighlightRectangle[i]).x0,
+								(charHighlightRectangle[i]).y0,
+								(charHighlightRectangle[i]).x1,
+								(charHighlightRectangle[i]).y1, BLUE);
+					else
+						ILI9341_Draw_Hollow_Rectangle_Coord(
+								(charHighlightRectangle[i]).x0,
+								(charHighlightRectangle[i]).y0,
+								(charHighlightRectangle[i]).x1,
+								(charHighlightRectangle[i]).y1, 0xFBE0);
+				}
+				checkMap(cursor, mapState, mapRectangle);
+				if (isTouchWithinRectangle(bBack, cursor)) {
+					displayScreen = 0;
+					break;
+				}
+				if (isTouchWithinRectangle(numPlayerRectangle[0], cursor)) {
+					displayScreen = 0;
+					numPlayerState[0] = 1;
+					numPlayerState[1] = 0;
+					for (int i = 0;
+							i
+									< sizeof(characterState_2)
+											/ sizeof(characterState_2[0]);
+							i++) {
+						characterState_2[i] = 0;
+					}
+					break;
+				}
+				//				if (isTouchWithinRectangle(bPlay, cursor)) {
+				//					if (checkStartGame())
+				//						break;
+				//				}
+				if (checkStartGame(numPlayerState, mapState, characterState,
+						characterState_2, displayScreen)) {
+					ILI9341_Draw_Filled_Rectangle_Coord(bPlay.x0, bPlay.y0,
+							bPlay.x1, bPlay.y1, PINK);
+					ILI9341_Draw_Text("PLAY", 108, 211, WHITE, 2, PINK);
+					if (isTouchWithinRectangle(bPlay, cursor))
+						break;
+				}
+				HAL_Delay(100);
+			}
+		}
+		if (displayScreen == 2) {
+			endGameFlag = false;
+			startGame();
+			while(!endGameFlag){}
+			printOut("END LOOP\n");
+			HAL_TIM_Base_Stop_IT(&htim1);
+			displayScreen = 3;
+		}
+		if (displayScreen == 3) {
+			drawPos.x = 0;
+			drawPos.y = 0;
+			winnerPage.drawPoint = drawPos;
+			drawImageAtPoint(winnerPage, SCREEN_ROTATION);
+			Rectangle winnerPic = { 100, 25, 212, 137 };
+
+			Rectangle winnerTextContainer = { 95, 142, 215, 170 };
+			ILI9341_Draw_Filled_Rectangle_Coord(winnerTextContainer.x0,
+					winnerTextContainer.y0, winnerTextContainer.x1,
+					winnerTextContainer.y1, YELLOW);
+
+			Rectangle bReplay = { 55, 175, 150, 200 };
+			Rectangle bNext = { 155, 175, 250, 200 };
+			Rectangle bExit = { 108, 205, 203, 230 };
+
+			ILI9341_Draw_Filled_Rectangle_Coord(bReplay.x0, bReplay.y0,
+					bReplay.x1, bReplay.y1, CYAN);
+			ILI9341_Draw_Filled_Rectangle_Coord(bNext.x0, bNext.y0, bNext.x1,
+					bNext.y1, GREEN);
+			ILI9341_Draw_Filled_Rectangle_Coord(bExit.x0, bExit.y0, bExit.x1,
+					bExit.y1, ORANGE);
+
+			ILI9341_Draw_Text("<REPLAY", 60, 179, BLACK, 2, CYAN);
+			ILI9341_Draw_Text("NEXT>", 175, 179, BLACK, 2, GREEN);
+			ILI9341_Draw_Text("EXIT", 133, 209, RED, 2, ORANGE);
+			//�����褹����
+			if(stateWin == 0){
+				ILI9341_Draw_Text("WINNER", 103, 143, BLUE, 3, YELLOW);
+				drawPos.x = winnerPic.x0;
+				drawPos.y = winnerPic.y0;
+				character112List[0].drawPoint = drawPos;
+				drawImageAtPoint(character112List[0], SCREEN_ROTATION);
+			}
+			//����
+			else if(stateWin > 0){
+				ILI9341_Draw_Text("DRAW", 120, 143, BLUE, 3, YELLOW);
+				//���� 2
+				if(stateWin == 1){
+					drawPos.x = winnerPic.x0;
+					drawPos.y = winnerPic.y0+28;
+					character56List[0].drawPoint = drawPos;
+					drawImageAtPoint(character56List[0], SCREEN_ROTATION);
+					drawPos.x = winnerPic.x1-56;
+					drawPos.y = winnerPic.y0+28;
+					character56List[1].drawPoint = drawPos;
+					drawImageAtPoint(character56List[1], SCREEN_ROTATION);
+				}
+				//���� 3
+				if(stateWin == 2){
+					drawPos.x = winnerPic.x0;
+					drawPos.y = winnerPic.y0;
+					character56List[0].drawPoint = drawPos;
+					drawImageAtPoint(character56List[0], SCREEN_ROTATION);
+					drawPos.x = winnerPic.x0+56;
+					drawPos.y = winnerPic.y0;
+					character56List[1].drawPoint = drawPos;
+					drawImageAtPoint(character56List[1], SCREEN_ROTATION);
+					drawPos.x = winnerPic.x0+32;
+					drawPos.y = winnerPic.y0+56;
+					character56List[2].drawPoint = drawPos;
+					drawImageAtPoint(character56List[2], SCREEN_ROTATION);
+
+				}
+				//���� 4
+				if(stateWin == 3){
+					drawPos.x = winnerPic.x0;
+					drawPos.y = winnerPic.y0;
+					character56List[0].drawPoint = drawPos;
+					drawImageAtPoint(character56List[0], SCREEN_ROTATION);
+					drawPos.x = winnerPic.x0+56;
+					drawPos.y = winnerPic.y0;
+					character56List[1].drawPoint = drawPos;
+					drawImageAtPoint(character56List[1], SCREEN_ROTATION);
+					drawPos.x = winnerPic.x0;
+					drawPos.y = winnerPic.y0+56;
+					character56List[2].drawPoint = drawPos;
+					drawImageAtPoint(character56List[2], SCREEN_ROTATION);
+					drawPos.x = winnerPic.x0+56;
+					drawPos.y = winnerPic.y0+56;
+					character56List[3].drawPoint = drawPos;
+					drawImageAtPoint(character56List[3], SCREEN_ROTATION);
+				}
+			}
+			while (1) {
+				if (HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_10) == GPIO_PIN_SET) {
+					displayScreen = 2;
+					break;
+				}
+				if (HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11) == GPIO_PIN_SET) {
+					displayScreen = 2;
+					mapID++;
+					break;
+				}
+				if (HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_12) == GPIO_PIN_SET) {
+					displayScreen = 0;
+					mapID = 0;
+					break;
+				}
+				HAL_Delay(200);
+			}
+		}
+	}
+}
+//----------------------------------------------------------
+
+
+
 Vector2 offset = {OFFSET_X,OFFSET_Y};
 Vector2 mapSize = {MAP_WIDTH,MAP_HEIGHT};
 Vector2 cellSize = {CELL_SIZE,CELL_SIZE};
@@ -81,6 +702,7 @@ Transform walls[4] = {
 	{{OFFSET_X+CELL_SIZE*(MAP_WIDTH-.5),OFFSET_Y+CELL_SIZE*(MAP_HEIGHT-.5)},{CELL_SIZE,CELL_SIZE*MAP_HEIGHT},BottomLeft},
 	{{OFFSET_X+CELL_SIZE*(MAP_WIDTH-.5),OFFSET_Y+CELL_SIZE*(MAP_HEIGHT-.5)},{CELL_SIZE*MAP_WIDTH,CELL_SIZE},TopRight},
 };
+int clock =0;
 int TimeTotal=0;
 int playerCount =2;
 Player* players ;
@@ -88,7 +710,6 @@ PlayerUI* playerUIs;
 Queue bombs ={NULL,NULL,0};
 Queue detonateEffects = {NULL,NULL,0};
 int32_t buffer[4];
-char str[90];
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim==&htim1){
 		TimeTotal += 20;
@@ -101,9 +722,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 			HAL_ADC_Start_DMA(&hadc1,(uint32_t *)buffer,4);
 		}
 	}
+	else if(htim==&htim2){
+		clock++;
+		sprintf(str,"%d:%d\n",clock/60,clock%60);
+		printOut(str);
+
+	}
 }
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	int time=TimeTotal;
+	if(TimeTotal>=GAME_TIME)
 	while(bombs.size&&((Bomb*)bombs.front->value)->detonateTime<time){
 
 		detonate((Bomb*)bombs.front->value);
@@ -140,6 +768,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	drawPlayers(players,playerCount);
 	for(int i=0;i<playerCount;i++)
 		DrawPlayerUI(&playerUIs[i]);
+	Vector2 clockPosition = Vector2_init(UI_MARGIN,10);
+	int timeLeft = GAME_TIME - clock;
+	int minute = timeLeft/60,second=timeLeft%60;
+	if(second<10)
+		sprintf(str,"%d:0%d",minute,second);
+	else
+		sprintf(str,"%d:%d",minute,second);
+	ILI9341_Draw_Text(str,clockPosition.x,clockPosition.y, WHITE, 2, BLACK);
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	int humanTotal = 0;
@@ -184,10 +820,25 @@ void SetPlayers(int count,bool* isBot){
 		players[i] = Player_init(startPosition[i],playerImage[i],playerImageBomb[i],isBot[i]);
 	}
 	for(int i=0;i<playerCount;i++){
-		playerUIs[i] = PlayerUI_init(&players[i],Vector2_init(5,20+(16+UI_MARGIN)*3*i));
+		playerUIs[i] = PlayerUI_init(&players[i],Vector2_init(5,40+(16+UI_MARGIN)*3*i));
 	}
 	Transform UI_Bg =Transform_init(Vector2_init(0,0),Vector2_init(5+(16+UI_MARGIN)*5,240),TopLeft);
 	Draw(&UI_Bg,BLACK);
+}
+void startGame(){
+	for(int i=0;i<mapSize.y;i++){
+		for(int j=0;j<mapSize.x;j++){
+			Vector2 index = Vector2_init(j,i);
+			map[i][j].floor = Transform_init(toPosition(index),cellSize,MiddleCenter);
+		}
+	}
+	clock = 0;
+	ILI9341_Fill_Screen(0x5AED);
+	setMap(2);
+
+	bool isBot[4]={false,false,true,true};
+	SetPlayers(4,isBot);
+	HAL_TIM_Base_Start_IT(&htim1);
 }
 /* USER CODE END 0 */
 
@@ -240,456 +891,9 @@ int main(void)
   srand(HAL_GetTick());
   HAL_TIM_Base_Start_IT(&htim2);
   ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	for(int i=0;i<mapSize.y;i++){
-		for(int j=0;j<mapSize.x;j++){
-			Vector2 index = Vector2_init(j,i);
-			map[i][j].floor = Transform_init(toPosition(index),cellSize,MiddleCenter);
-		}
-	}
-	setMap();
-	bool isBot[4]={false,true,true,true};
-	SetPlayers(4,isBot);
-	HAL_TIM_Base_Start_IT(&htim1);
   while (1)
   {
-
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-
-	  //----------------------------------------------------------PERFORMANCE TEST
-
-	  /*
-	  ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("FPS TEST, 40 loop 2 screens", 10, 10, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-	  		uint32_t Timer_Counter = 0;
-	  		for(uint32_t j = 0; j < 2; j++)
-	  		{
-	  			HAL_TIM_Base_Start(&htim1);
-	  			for(uint16_t i = 0; i < 10; i++)
-	  			{
-	  				ILI9341_Fill_Screen(WHITE);
-	  				ILI9341_Fill_Screen(BLACK);
-	  			}
-
-	  			//20.000 per second!
-	  			HAL_TIM_Base_Stop(&htim1);
-	  			Timer_Counter += __HAL_TIM_GET_COUNTER(&htim1);
-	  			__HAL_TIM_SET_COUNTER(&htim1, 0);
-	  		}
-	  		Timer_Counter /= 2;
-
-	  		char counter_buff[30];
-	  		ILI9341_Fill_Screen(WHITE);
-	  		sprintf(counter_buff, "Timer counter value: %ld", Timer_Counter*2);
-	  		ILI9341_Draw_Text(counter_buff, 10, 10, BLACK, 1, WHITE);
-
-	  		double seconds_passed = 2*((float)Timer_Counter / 20000);
-	  		sprintf(counter_buff, "Time: %.3f Sec", seconds_passed);
-	  		ILI9341_Draw_Text(counter_buff, 10, 30, BLACK, 2, WHITE);
-
-	  		double timer_float = 20/(((float)Timer_Counter)/20000);	//Frames per sec
-
-	  		sprintf(counter_buff, "FPS:  %.2f", timer_float);
-	  		ILI9341_Draw_Text(counter_buff, 10, 50, BLACK, 2, WHITE);
-	  		double MB_PS = timer_float*240*320*2/1000000;
-	  		sprintf(counter_buff, "MB/S: %.2f", MB_PS);
-	  		ILI9341_Draw_Text(counter_buff, 10, 70, BLACK, 2, WHITE);
-	  		double SPI_utilized_percentage = (MB_PS/(6.25 ))*100;		//50mbits / 8 bits
-	  		sprintf(counter_buff, "SPI Utilized: %.2f", SPI_utilized_percentage);
-	  		ILI9341_Draw_Text(counter_buff, 10, 90, BLACK, 2, WHITE);
-	  		HAL_Delay(10000);
-
-
-	  		static uint16_t x = 0;
-	  		static uint16_t y = 0;
-
-	  		char Temp_Buffer_text[40];
-
-	  //----------------------------------------------------------COUNTING MULTIPLE SEGMENTS
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Counting multiple segments at once", 10, 10, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-
-	  		for(uint16_t i = 0; i <= 10; i++)
-	  		{
-	  		sprintf(Temp_Buffer_text, "Counting: %d", i);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 10, BLACK, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 30, BLUE, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 50, RED, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 70, GREEN, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 90, BLACK, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 110, BLUE, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 130, RED, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 150, GREEN, 2, WHITE);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 170, WHITE, 2, BLACK);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 190, BLUE, 2, BLACK);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 210, RED, 2, BLACK);
-	  		}
-
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------COUNTING SINGLE SEGMENT
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Counting single segment", 10, 10, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-	  		for(uint16_t i = 0; i <= 100; i++)
-	  		{
-	  		sprintf(Temp_Buffer_text, "Counting: %d", i);
-	  		ILI9341_Draw_Text(Temp_Buffer_text, 10, 10, BLACK, 3, WHITE);
-	  		}
-
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------ALIGNMENT TEST
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Rectangle alignment check", 10, 10, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-	  		ILI9341_Draw_Hollow_Rectangle_Coord(50, 50, 100, 100, BLACK);
-	  		ILI9341_Draw_Filled_Rectangle_Coord(20, 20, 50, 50, BLACK);
-	  		ILI9341_Draw_Hollow_Rectangle_Coord(10, 10, 19, 19, BLACK);
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------LINES EXAMPLE
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Randomly placed and sized", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("Horizontal and Vertical lines", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-	  		for(uint32_t i = 0; i < 30000; i++)
-	  		{
-	  			uint32_t random_num = 0;
-	  			uint16_t xr = 0;
-	  			uint16_t yr = 0;
-	  			uint16_t radiusr = 0;
-	  			uint16_t colourr = 0;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			xr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			yr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			radiusr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			colourr = random_num;
-
-	  			xr &= 0x01FF;
-	  			yr &= 0x01FF;
-	  			radiusr &= 0x001F;
-	  			//ili9341_drawpixel(xr, yr, WHITE);
-	  			ILI9341_Draw_Horizontal_Line(xr, yr, radiusr, colourr);
-	  			ILI9341_Draw_Vertical_Line(xr, yr, radiusr, colourr);
-	  		}
-
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------HOLLOW CIRCLES EXAMPLE
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Randomly placed and sized", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("Circles", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-
-	  		for(uint32_t i = 0; i < 3000; i++)
-	  		{
-	  			uint32_t random_num = 0;
-	  			uint16_t xr = 0;
-	  			uint16_t yr = 0;
-	  			uint16_t radiusr = 0;
-	  			uint16_t colourr = 0;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			xr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			yr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			radiusr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			colourr = random_num;
-
-	  			xr &= 0x01FF;
-	  			yr &= 0x01FF;
-	  			radiusr &= 0x001F;
-	  			//ili9341_drawpixel(xr, yr, WHITE);
-	  			ILI9341_Draw_Hollow_Circle(xr, yr, radiusr*2, colourr);
-	  		}
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------FILLED CIRCLES EXAMPLE
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Randomly placed and sized", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("Filled Circles", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-	  		for(uint32_t i = 0; i < 1000; i++)
-	  		{
-	  			uint32_t random_num = 0;
-	  			uint16_t xr = 0;
-	  			uint16_t yr = 0;
-	  			uint16_t radiusr = 0;
-	  			uint16_t colourr = 0;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			xr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			yr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			radiusr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			colourr = random_num;
-
-	  			xr &= 0x01FF;
-	  			yr &= 0x01FF;
-	  			radiusr &= 0x001F;
-	  			//ili9341_drawpixel(xr, yr, WHITE);
-	  			ILI9341_Draw_Filled_Circle(xr, yr, radiusr/2, colourr);
-	  		}
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------HOLLOW RECTANGLES EXAMPLE
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Randomly placed and sized", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("Rectangles", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-	  		for(uint32_t i = 0; i < 20000; i++)
-	  		{
-	  			uint32_t random_num = 0;
-	  			uint16_t xr = 0;
-	  			uint16_t yr = 0;
-	  			uint16_t radiusr = 0;
-	  			uint16_t colourr = 0;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			xr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			yr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			radiusr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			colourr = random_num;
-
-	  			xr &= 0x01FF;
-	  			yr &= 0x01FF;
-	  			radiusr &= 0x001F;
-	  			//ili9341_drawpixel(xr, yr, WHITE);
-	  			ILI9341_Draw_Hollow_Rectangle_Coord(xr, yr, xr+radiusr, yr+radiusr, colourr);
-	  		}
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------FILLED RECTANGLES EXAMPLE
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Randomly placed and sized", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("Filled Rectangles", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-	  		for(uint32_t i = 0; i < 20000; i++)
-	  		{
-	  			uint32_t random_num = 0;
-	  			uint16_t xr = 0;
-	  			uint16_t yr = 0;
-	  			uint16_t radiusr = 0;
-	  			uint16_t colourr = 0;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			xr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			yr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			radiusr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			colourr = random_num;
-
-	  			xr &= 0x01FF;
-	  			yr &= 0x01FF;
-	  			radiusr &= 0x001F;
-	  			//ili9341_drawpixel(xr, yr, WHITE);
-	  			ILI9341_Draw_Rectangle(xr, yr, radiusr, radiusr, colourr);
-	  		}
-	  		HAL_Delay(1000);
-
-	  //----------------------------------------------------------INDIVIDUAL PIXEL EXAMPLE
-
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Slow draw by selecting", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("and adressing pixels", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-
-	  		x = 0;
-	  		y = 0;
-	  		while (y < 240)
-	  		{
-	  		while ((x < 320) && (y < 240))
-	  		{
-
-	  			if(x % 2)
-	  			{
-	  				ILI9341_Draw_Pixel(x, y, BLACK);
-	  			}
-
-	  			x++;
-	  		}
-
-	  			y++;
-	  			x = 0;
-	  		}
-
-	  		x = 0;
-	  		y = 0;
-
-
-	  		while (y < 240)
-	  		{
-	  		while ((x < 320) && (y < 240))
-	  		{
-
-	  			if(y % 2)
-	  			{
-	  				ILI9341_Draw_Pixel(x, y, BLACK);
-	  			}
-
-	  			x++;
-	  		}
-
-	  			y++;
-	  			x = 0;
-	  		}
-	  		HAL_Delay(2000);
-
-	  //----------------------------------------------------------INDIVIDUAL PIXEL EXAMPLE
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Random position and colour", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("500000 pixels", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Fill_Screen(WHITE);
-
-
-	  		for(uint32_t i = 0; i < 500000; i++)
-	  		{
-	  			uint32_t random_num = 0;
-	  			uint16_t xr = 0;
-	  			uint16_t yr = 0;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			xr = random_num;
-	  			random_num = HAL_RNG_GetRandomNumber(&hrng);
-	  			yr = random_num;
-	  			uint16_t color = HAL_RNG_GetRandomNumber(&hrng);
-
-	  			xr &= 0x01FF;
-	  			yr &= 0x01FF;
-	  			ILI9341_Draw_Pixel(xr, yr, color);
-	  		}
-	  		HAL_Delay(2000);
-
-	  //----------------------------------------------------------565 COLOUR EXAMPLE, Grayscale
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Colour gradient", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("Grayscale", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-
-
-	  		for(uint16_t i = 0; i <= (320); i++)
-	  		{
-	  			uint16_t Red = 0;
-	  			uint16_t Green = 0;
-	  			uint16_t Blue = 0;
-
-	  			Red = i/(10);
-	  			Red <<= 11;
-	  			Green = i/(5);
-	  			Green <<= 5;
-	  			Blue = i/(10);
-
-
-
-	  			uint16_t RGB_color = Red + Green + Blue;
-	  			ILI9341_Draw_Rectangle(i, x, 1, 240, RGB_color);
-
-	  		}
-	  		HAL_Delay(2000);
-
-	  //----------------------------------------------------------IMAGE EXAMPLE, Snow Tiger
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("RGB Picture", 10, 10, BLACK, 1, WHITE);
-	  		ILI9341_Draw_Text("TIGER", 10, 20, BLACK, 1, WHITE);
-	  		HAL_Delay(2000);
-	  		ILI9341_Draw_Image((const char*)snow_tiger, SCREEN_VERTICAL_2);
-	  		ILI9341_Set_Rotation(SCREEN_VERTICAL_1);
-	  		HAL_Delay(5000);
-
-
-	  //----------------------------------------------------------TOUCHSCREEN EXAMPLE
-	  		ILI9341_Fill_Screen(WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  		ILI9341_Draw_Text("Touchscreen", 10, 10, BLACK, 2, WHITE);
-	  		ILI9341_Draw_Text("Touch to draw", 10, 30, BLACK, 2, WHITE);
-	  		ILI9341_Set_Rotation(SCREEN_VERTICAL_1);
-
-
-	  		while(1)
-	  		{
-	  			HAL_Delay(20);
-
-	  			if(TP_Touchpad_Pressed())
-	          {
-
-	  					uint16_t x_pos = 0;
-	  					uint16_t y_pos = 0;
-
-
-	  					HAL_GPIO_WritePin(GPIOB, LD3_Pin|LD2_Pin, GPIO_PIN_SET);
-
-	            uint16_t position_array[2];
-
-	  					if(TP_Read_Coordinates(position_array) == TOUCHPAD_DATA_OK)
-	  					{
-	  					x_pos = position_array[0];
-	  					y_pos = position_array[1];
-	  					ILI9341_Draw_Filled_Circle(x_pos, y_pos, 2, BLACK);
-
-	  					ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  					char counter_buff[30];
-	  					sprintf(counter_buff, "POS X: %.3d", x_pos);
-	  					ILI9341_Draw_Text(counter_buff, 10, 80, BLACK, 2, WHITE);
-	  					sprintf(counter_buff, "POS Y: %.3d", y_pos);
-	  					ILI9341_Draw_Text(counter_buff, 10, 120, BLACK, 2, WHITE);
-	  					ILI9341_Set_Rotation(SCREEN_VERTICAL_1);
-	  					}
-
-	  					ILI9341_Draw_Pixel(x_pos, y_pos, BLACK);
-
-	          }
-	  			else
-	  			{
-	  				HAL_GPIO_WritePin(GPIOB, LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
-	  			}
-
-	  		}*/
-
+	  setting_winPage();
   }
   /* USER CODE END 3 */
 }
