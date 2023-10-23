@@ -36,9 +36,9 @@ Core/Src/gameUtility.o: ../Core/Src/gameUtility.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
  ../Core/Src/utility.h ../Core/Src/Icon.h \
- /Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/Drivers/ILI9341/ILI9341_Touchscreen.h \
- /Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/Drivers/ILI9341/ILI9341_STM32_Driver.h \
- /Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/Drivers/ILI9341/ILI9341_GFX.h \
+ /Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/Drivers/ILI9341/ILI9341_Touchscreen.h \
+ /Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/Drivers/ILI9341/ILI9341_STM32_Driver.h \
+ /Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/Drivers/ILI9341/ILI9341_GFX.h \
  ../Core/Inc/spi.h ../Core/Inc/main.h
 ../Core/Src/gameUtility.h:
 ../Core/Inc/main.h:
@@ -79,8 +79,8 @@ Core/Src/gameUtility.o: ../Core/Src/gameUtility.c \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
 ../Core/Src/utility.h:
 ../Core/Src/Icon.h:
-/Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/Drivers/ILI9341/ILI9341_Touchscreen.h:
-/Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/Drivers/ILI9341/ILI9341_STM32_Driver.h:
-/Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/Drivers/ILI9341/ILI9341_GFX.h:
+/Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/Drivers/ILI9341/ILI9341_Touchscreen.h:
+/Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/Drivers/ILI9341/ILI9341_STM32_Driver.h:
+/Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/Drivers/ILI9341/ILI9341_GFX.h:
 ../Core/Inc/spi.h:
 ../Core/Inc/main.h:

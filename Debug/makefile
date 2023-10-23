@@ -35,34 +35,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := 767_SPI_ILI9341_2
+BUILD_ARTIFACT_NAME := MAD_Project
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-767_SPI_ILI9341_2.elf \
+MAD_Project.elf \
 
 MAP_FILES += \
-767_SPI_ILI9341_2.map \
+MAD_Project.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-767_SPI_ILI9341_2.list \
+MAD_Project.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: 767_SPI_ILI9341_2.elf secondary-outputs
+main-build: MAD_Project.elf secondary-outputs
 
 # Tool invocations
-767_SPI_ILI9341_2.elf 767_SPI_ILI9341_2.map: $(OBJS) $(USER_OBJS) /Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/STM32F767ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "767_SPI_ILI9341_2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/Users/vorapolpromwan/Desktop/MicroCon/767_SPI_ILI9341_2/STM32F767ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="767_SPI_ILI9341_2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+MAD_Project.elf MAD_Project.map: $(OBJS) $(USER_OBJS) /Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/STM32F767ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "MAD_Project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/Users/vorapolpromwan/Desktop/MicroCon/Project/KMITL-2023-S1-Microcontroller/MAD_Project/STM32F767ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MAD_Project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -71,14 +71,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-767_SPI_ILI9341_2.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "767_SPI_ILI9341_2.list"
+MAD_Project.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "MAD_Project.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) 767_SPI_ILI9341_2.elf 767_SPI_ILI9341_2.list 767_SPI_ILI9341_2.map default.size.stdout
+	-$(RM) MAD_Project.elf MAD_Project.list MAD_Project.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
